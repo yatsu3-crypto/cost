@@ -537,9 +537,32 @@ function renderTable() {
   }).join('');
 }
 
+const STORAGE_KEY = 'yamamoto_clinic_costs';
+
+function saveToStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, nextId }));
+  } catch(e) {}
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (data.items && data.items.length) {
+      items = data.items.map(x => ({ suzuken:'', ksk:'', alfresa:'', cost:'', price:'', ...x }));
+      nextId = data.nextId || (Math.max(...items.map(x=>x.id)) + 1);
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
 function render() {
   renderSummary();
   renderTable();
+  saveToStorage();
 }
 
 function updateItem(id, field, value) {
@@ -550,7 +573,6 @@ function updateItem(id, field, value) {
 function addItem() {
   items.push({ id: nextId++, name: '新規薬剤・製品', cat: filterCat === 'すべて' ? '外用' : filterCat, cost: '', price: '', suzuken:'', ksk:'', alfresa:'' });
   render();
-  // focus last name input
   setTimeout(() => {
     const inputs = document.querySelectorAll('.name-input');
     if (inputs.length) inputs[inputs.length-1].focus();
@@ -577,6 +599,7 @@ document.getElementById('sortSelect').addEventListener('change', e => {
   render();
 });
 
+loadFromStorage();
 render();
 </script>
 </body>
