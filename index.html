@@ -513,7 +513,7 @@ function renderTable() {
       <td><div class="category-dot dot-${item.cat}"></div></td>
       <td>
         <div class="item-name-cell">
-          <input class="name-input" value="${item.name}" oninput="updateItem(${item.id},'name',this.value)" placeholder="薬剤・製品名" />
+          <input class="name-input" value="${item.name}" oninput="updateItem(${item.id},'name',this.value,true)" onblur="updateItem(${item.id},'name',this.value)" placeholder="薬剤・製品名" />
         </div>
       </td>
       <td>
@@ -565,9 +565,13 @@ function render() {
   saveToStorage();
 }
 
-function updateItem(id, field, value) {
+function updateItem(id, field, value, skipRender) {
   const item = items.find(x => x.id === id);
-  if (item) { item[field] = value; render(); }
+  if (item) {
+    item[field] = value;
+    if (!skipRender) render();
+    else saveToStorage();
+  }
 }
 
 function addItem() {
