@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>やまもと皮膚科 薬剤・コスメ採算管理</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #F7F6F2;
+    --surface: #FFFFFF;
+    --surface2: #F0EEE8;
+    --border: #E2DDD5;
+    --text: #1A1917;
+    --text2: #6B6760;
+    --text3: #A09C96;
+    --accent: #2D5016;
+    --accent-light: #EBF2E3;
+    --warn: #7A4A00;
+    --warn-light: #FEF3DC;
+    --danger: #8B1A1A;
+    --danger-light: #FDEAEA;
+    --info: #1A3A5C;
+    --info-light: #E8EFF7;
+    --tag-injection: #2D3A5C;
+    --tag-topical: #1A4A3A;
+    --tag-oral: #4A2D5C;
+    --tag-cosme: #5C3A1A;
+    --tag-other: #3A3A3A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  .app-shell {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px 80px;
+  }
+
+  /* Header */
+  .app-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .app-title { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .app-subtitle { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  /* Summary Bar */
+  .summary-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .stat-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+  .stat-value { font-size: 20px; font-weight: 700; font-family: 'DM Mono', monospace; }
+  .stat-value.good { color: var(--accent); }
+  .stat-value.warn { color: var(--warn); }
+  .stat-value.bad { color: var(--danger); }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .filter-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 3px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    padding: 5px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab-btn.active {
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .sort-select {
+    margin-left: auto;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .add-btn-main {
+    padding: 6px 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .add-btn-main:hover { opacity: 0.85; }
+
+  /* Table */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow-x: auto;
+  }
+  .dist-input { color: var(--text2); }
+  thead th.dist { color: #1A3A5C; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  thead th.num { text-align: right; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg); }
+  td { padding: 10px 14px; vertical-align: middle; }
+  td.num { text-align: right; font-family: 'DM Mono', monospace; font-size: 13px; }
+
+  .item-name-cell { display: flex; align-items: center; gap: 8px; }
+  .name-input {
+    border: none;
+    background: transparent;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    width: 100%;
+    min-width: 120px;
+    outline: none;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  .name-input:focus { background: var(--surface2); }
+
+  .category-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-注射 { background: var(--tag-injection); }
+  .dot-外用 { background: var(--tag-topical); }
+  .dot-内服 { background: var(--tag-oral); }
+  .dot-コスメ { background: var(--tag-cosme); }
+  .dot-その他 { background: var(--tag-other); }
+
+  .cat-select {
+    border: none;
+    background: transparent;
+    font-size: 11px;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--text3);
+    cursor: pointer;
+    outline: none;
+    padding: 2px;
+  }
+
+  .price-input {
+    border: 1px solid transparent;
+    background: transparent;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    text-align: right;
+    width: 90px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .price-input:focus { border-color: var(--border); background: var(--surface2); }
+
+  .margin-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .margin-bar-bg {
+    height: 4px; width: 60px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .margin-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+  .margin-val { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; min-width: 42px; text-align: right; }
+  .good { color: var(--accent); }
+  .warn { color: var(--warn); }
+  .bad { color: var(--danger); }
+  .bar-good { background: var(--accent); }
+  .bar-warn { background: var(--warn); }
+  .bar-bad { background: var(--danger); }
+
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .badge-good { background: var(--accent-light); color: var(--accent); }
+  .badge-warn { background: var(--warn-light); color: var(--warn); }
+  .badge-bad { background: var(--danger-light); color: var(--danger); }
+  .badge-empty { background: var(--surface2); color: var(--text3); }
+
+  .del-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text3); font-size: 14px; padding: 2px 6px;
+    border-radius: 4px; line-height: 1;
+  }
+  .del-btn:hover { background: var(--danger-light); color: var(--danger); }
+
+  /* Add row */
+  .add-row-btn {
+    width: 100%; padding: 12px;
+    background: none; border: none;
+    border-top: 1px dashed var(--border);
+    color: var(--text3); font-size: 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer; text-align: center;
+  }
+  .add-row-btn:hover { background: var(--bg); color: var(--text2); }
+
+  /* Empty state */
+  .empty { padding: 40px; text-align: center; color: var(--text3); font-size: 13px; }
+
+  /* Legend */
+  .legend {
+    display: flex; gap: 16px; margin-top: 12px;
+    font-size: 11px; color: var(--text3); flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  @media (max-width: 600px) {
+    .summary-bar { grid-template-columns: repeat(2, 1fr); }
+    .price-input { width: 70px; }
+    .margin-bar-bg { width: 40px; }
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <div class="app-header">
+    <div>
+      <div class="app-title">薬剤・コスメ 採算管理</div>
+      <div class="app-subtitle">やまもと皮膚科・漢方クリニック</div>
+    </div>
+  </div>
+
+  <div class="summary-bar" id="summaryBar"></div>
+
+  <div class="controls">
+    <div class="filter-tabs" id="filterTabs">
+      <button class="tab-btn active" data-cat="すべて">すべて</button>
+      <button class="tab-btn" data-cat="注射">注射</button>
+      <button class="tab-btn" data-cat="外用">外用</button>
+      <button class="tab-btn" data-cat="内服">内服</button>
+      <button class="tab-btn" data-cat="コスメ">コスメ</button>
+      <button class="tab-btn" data-cat="その他">その他</button>
+    </div>
+    <select class="sort-select" id="sortSelect">
+      <option value="name">名前順</option>
+      <option value="margin-desc">粗利率 高い順</option>
+      <option value="margin-asc">粗利率 低い順</option>
+      <option value="cat">カテゴリ順</option>
+    </select>
+    <button class="add-btn-main" onclick="addItem()">＋ 追加</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:30px;"></th>
+          <th>薬剤・製品名</th>
+          <th>カテゴリ</th>
+          <th class="num" style="color:#1A3A5C;">スズケン</th>
+          <th class="num" style="color:#2D5016;">KSK</th>
+          <th class="num" style="color:#7A4A00;">アルフレッサ</th>
+          <th class="num">原価（税抜）</th>
+          <th class="num">売価（税抜）</th>
+          <th class="num">粗利額</th>
+          <th class="num">粗利率</th>
+          <th>判定</th>
+          <th style="width:36px;"></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <button class="add-row-btn" onclick="addItem()">＋ 薬剤・製品を追加</button>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#2D3A5C"></div>注射</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1A4A3A"></div>外用</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#4A2D5C"></div>内服</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#5C3A1A"></div>コスメ</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#3A3A3A"></div>その他</div>
+    <div class="legend-item" style="margin-left:8px;">粗利率: <span style="color:var(--accent);font-weight:500;">50%以上 良好</span> / <span style="color:var(--warn);font-weight:500;">35〜50% 要検討</span> / <span style="color:var(--danger);font-weight:500;">35%未満 注意</span></div>
+  </div>
+</div>
+
+<script>
+const CATS = ['注射','外用','内服','コスメ','その他'];
+
+let items = [
+  { id:1,  name:'ビタミンCローション 50ml',       cat:'コスメ', cost:1312, price:2000, suzuken:'', ksk:'', alfresa:'' },
+  { id:2,  name:'HQクリーム',                     cat:'コスメ', cost:'', price:'' },
+  { id:3,  name:'トレチノインクリーム',             cat:'コスメ', cost:'', price:'' },
+  { id:4,  name:'グルタチオン点滴',               cat:'注射',   cost:'', price:'' },
+  { id:5,  name:'プラセンタ注射',                 cat:'注射',   cost:'', price:'' },
+  { id:6,  name:'アスタキサンチンジャル',           cat:'コスメ', cost:'', price:'' },
+  { id:7,  name:'UVプロテクトミルク',              cat:'コスメ', cost:'', price:'' },
+  { id:8,  name:'フィブラストスプレー500μg',       cat:'外用',   cost:'', price:'' },
+  { id:9,  name:'テラ・コートリル軟膏',            cat:'外用',   cost:'', price:'' },
+  { id:10, name:'モイスチャクリーム',              cat:'コスメ', cost:'', price:'' },
+  { id:11, name:'ヒルドイドクリーム',              cat:'外用',   cost:'', price:'' },
+  { id:12, name:'エムラクリーム5g',               cat:'外用',   cost:'', price:'' },
+  { id:13, name:'小分けクリームジャー',            cat:'その他', cost:'', price:'' },
+  { id:14, name:'アンテベートローション',           cat:'外用',   cost:'', price:'' },
+  { id:15, name:'アンテベート軟膏10g',             cat:'外用',   cost:'', price:'' },
+  { id:16, name:'HQパウダー 80%',                 cat:'コスメ', cost:'', price:'' },
+  { id:17, name:'ペンレステープ',                  cat:'外用',   cost:'', price:'' },
+  { id:18, name:'ゲーベンクリーム100g',            cat:'外用',   cost:'', price:'' },
+  { id:19, name:'デルモベート軟膏5g',              cat:'外用',   cost:'', price:'' },
+  { id:20, name:'プロペト500g',                   cat:'外用',   cost:'', price:'' },
+  { id:21, name:'エキザルベ',                     cat:'外用',   cost:'', price:'' },
+  { id:22, name:'キシロカインゼリー2%',            cat:'外用',   cost:'', price:'' },
+  { id:23, name:'メイスパン100g',                  cat:'外用',   cost:'', price:'' },
+  { id:24, name:'ボアラ軟膏5g',                   cat:'外用',   cost:'', price:'' },
+  { id:25, name:'ロコイド軟膏5g',                 cat:'外用',   cost:'', price:'' },
+  { id:26, name:'アゾノール',                     cat:'外用',   cost:'', price:'' },
+  { id:27, name:'スピール膏',                     cat:'外用',   cost:'', price:'' },
+  { id:28, name:'プロスタンディン軟膏',            cat:'外用',   cost:'', price:'' },
+  { id:29, name:'オスバン',                       cat:'外用',   cost:'', price:'' },
+  { id:30, name:'マスキン0.05%',                  cat:'外用',   cost:'', price:'' },
+  { id:31, name:'マスキン0.02%',                  cat:'外用',   cost:'', price:'' },
+  { id:32, name:'参考フィブラストスプレー250μg',   cat:'外用',   cost:'', price:'' },
+  { id:33, name:'アンテベート軟膏5g',              cat:'外用',   cost:'', price:'' },
+  { id:34, name:'DOACGF（5枚）',                  cat:'外用',   cost:'', price:'' },
+  { id:35, name:'ロゼックスゲル',                  cat:'外用',   cost:'', price:'' },
+  { id:36, name:'デビュピクセント',                cat:'注射',   cost:'', price:'' },
+  { id:37, name:'デュピクセントペン',              cat:'注射',   cost:'', price:'' },
+  { id:38, name:'セファゾリンNa・オーツカ',         cat:'注射',   cost:'', price:'' },
+  { id:39, name:'大塚生食注',                     cat:'注射',   cost:'', price:'' },
+  { id:40, name:'ボスミン1mg',                    cat:'注射',   cost:'', price:'' },
+  { id:41, name:'キシロカイン1%',                 cat:'注射',   cost:'', price:'' },
+  { id:42, name:'ポララミン5mg',                  cat:'注射',   cost:'', price:'' },
+  { id:43, name:'キシロカインE0.5%',              cat:'注射',   cost:'', price:'' },
+  { id:44, name:'インフルワクチン4価',             cat:'注射',   cost:'', price:'' },
+  { id:45, name:'帯状疱疹ワクチン',               cat:'注射',   cost:'', price:'' },
+  { id:46, name:'ケナコルトA',                    cat:'注射',   cost:'', price:'' },
+  { id:47, name:'ザガーロ',                       cat:'内服',   cost:'', price:'' },
+  { id:48, name:'プロペシア',                     cat:'内服',   cost:'', price:'' },
+  { id:49, name:'フィナステリドクラシエ',           cat:'内服',   cost:'', price:'' },
+  { id:50, name:'フィナステリドTOWA',              cat:'内服',   cost:'', price:'' },
+  { id:51, name:'フィナステリド本草',              cat:'内服',   cost:'', price:'' },
+  { id:52, name:'MRワクチン',                     cat:'注射',   cost:'', price:'' },
+  { id:53, name:'コレクチム軟膏',                 cat:'外用',   cost:'', price:'' },
+  { id:54, name:'セヌール',                       cat:'内服',   cost:'', price:'' },
+  { id:55, name:'ミノキシジル5%外用液',            cat:'外用',   cost:'', price:'' },
+  { id:56, name:'ヘリオケアウルトラD',             cat:'コスメ', cost:'', price:'' },
+  { id:57, name:'女性用ミノキシジル1%外用液',      cat:'外用',   cost:'', price:'' },
+  { id:58, name:'リポゲイン3% 2ボトル',           cat:'外用',   cost:'', price:'' },
+  { id:59, name:'エラストポア12',                 cat:'その他', cost:'', price:'' },
+  { id:60, name:'コラージュフルフルプレミアムシャンプー', cat:'コスメ', cost:'', price:'' },
+  { id:61, name:'育毛スプレー',                   cat:'外用',   cost:'', price:'' },
+  { id:62, name:'育毛ローション',                 cat:'外用',   cost:'', price:'' },
+  { id:63, name:'ボトックス',                     cat:'注射',   cost:'', price:'' },
+  { id:64, name:'グラッシュビスタ',               cat:'外用',   cost:'', price:'' },
+  { id:65, name:'シングリックス',                 cat:'注射',   cost:'', price:'' },
+  { id:66, name:'デュタステリド',                 cat:'内服',   cost:'', price:'' },
+  { id:67, name:'コラージュフルフルプレミアムシャンプー詰め替え', cat:'コスメ', cost:'', price:'' },
+  { id:68, name:'ミチーガ',                       cat:'注射',   cost:'', price:'' },
+  { id:69, name:'デルマクイックHSV',              cat:'その他', cost:'', price:'' },
+  { id:70, name:'イブグリース（2024年11月〜）',    cat:'外用',   cost:'', price:'' },
+  { id:71, name:'ゾレア',                         cat:'注射',   cost:'', price:'' },
+  { id:72, name:'デュピクセント200ペン',           cat:'注射',   cost:'', price:'' },
+];
+let nextId = 73;
+items = items.map(x => ({ suzuken:'', ksk:'', alfresa:'', ...x }));
+let filterCat = 'すべて';
+let sortKey = 'name';
+
+function margin(cost, price) {
+  const c = Number(cost), p = Number(price);
+  if (!c || !p || p === 0) return null;
+  return (p - c) / p * 100;
+}
+function profit(cost, price) {
+  const c = Number(cost), p = Number(price);
+  if (!c || !p) return null;
+  return p - c;
+}
+function cls(m) {
+  if (m === null) return '';
+  return m >= 50 ? 'good' : m >= 35 ? 'warn' : 'bad';
+}
+function barCls(m) {
+  if (m === null) return 'bar-good';
+  return m >= 50 ? 'bar-good' : m >= 35 ? 'bar-warn' : 'bar-bad';
+}
+function badge(m) {
+  if (m === null) return '<span class="badge badge-empty">未入力</span>';
+  if (m >= 50) return '<span class="badge badge-good">良好</span>';
+  if (m >= 35) return '<span class="badge badge-warn">要検討</span>';
+  return '<span class="badge badge-bad">注意</span>';
+}
+
+function getFiltered() {
+  let arr = filterCat === 'すべて' ? [...items] : items.filter(x => x.cat === filterCat);
+  if (sortKey === 'name') arr.sort((a,b) => a.name.localeCompare(b.name,'ja'));
+  else if (sortKey === 'margin-desc') arr.sort((a,b) => (margin(b.cost,b.price)??-999) - (margin(a.cost,a.price)??-999));
+  else if (sortKey === 'margin-asc') arr.sort((a,b) => (margin(a.cost,a.price)??999) - (margin(b.cost,b.price)??999));
+  else if (sortKey === 'cat') arr.sort((a,b) => CATS.indexOf(a.cat) - CATS.indexOf(b.cat));
+  return arr;
+}
+
+function renderSummary() {
+  const filled = items.filter(x => x.cost && x.price);
+  const totalItems = items.length;
+  const filledItems = filled.length;
+  const margins = filled.map(x => margin(x.cost, x.price));
+  const avgMargin = margins.length ? margins.reduce((a,b)=>a+b,0)/margins.length : null;
+  const goodCount = margins.filter(m => m >= 50).length;
+
+  const bar = document.getElementById('summaryBar');
+  bar.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">登録数</div>
+      <div class="stat-value">${totalItems}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">入力済み</div>
+      <div class="stat-value">${filledItems} / ${totalItems}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">平均粗利率</div>
+      <div class="stat-value ${avgMargin !== null ? cls(avgMargin) : ''}">${avgMargin !== null ? avgMargin.toFixed(1)+'%' : '—'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">良好（50%超）</div>
+      <div class="stat-value good">${goodCount}品目</div>
+    </div>
+  `;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  const arr = getFiltered();
+  if (arr.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="12"><div class="empty">該当する薬剤・製品がありません</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = arr.map(item => {
+    const m = margin(item.cost, item.price);
+    const pr = profit(item.cost, item.price);
+    const barW = m !== null ? Math.min(100, Math.max(0, m)) : 0;
+    const catOptions = CATS.map(c => `<option${c===item.cat?' selected':''}>${c}</option>`).join('');
+
+    // 最安値ハイライト
+    const prices = [item.suzuken, item.ksk, item.alfresa].map(Number).filter(v => v > 0);
+    const minP = prices.length ? Math.min(...prices) : null;
+    function distStyle(val) {
+      const v = Number(val);
+      if (!v || minP === null) return '';
+      return v === minP ? 'style="color:var(--accent);font-weight:500;"' : '';
+    }
+
+    return `<tr>
+      <td><div class="category-dot dot-${item.cat}"></div></td>
+      <td>
+        <div class="item-name-cell">
+          <input class="name-input" value="${item.name}" oninput="updateItem(${item.id},'name',this.value)" placeholder="薬剤・製品名" />
+        </div>
+      </td>
+      <td>
+        <select class="cat-select" onchange="updateItem(${item.id},'cat',this.value)">${catOptions}</select>
+      </td>
+      <td class="num"><input class="price-input dist-input" type="number" value="${item.suzuken}" placeholder="—" ${distStyle(item.suzuken)} oninput="updateItem(${item.id},'suzuken',this.value)" /></td>
+      <td class="num"><input class="price-input dist-input" type="number" value="${item.ksk}" placeholder="—" ${distStyle(item.ksk)} oninput="updateItem(${item.id},'ksk',this.value)" /></td>
+      <td class="num"><input class="price-input dist-input" type="number" value="${item.alfresa}" placeholder="—" ${distStyle(item.alfresa)} oninput="updateItem(${item.id},'alfresa',this.value)" /></td>
+      <td class="num"><input class="price-input" type="number" value="${item.cost}" placeholder="—" oninput="updateItem(${item.id},'cost',this.value)" /></td>
+      <td class="num"><input class="price-input" type="number" value="${item.price}" placeholder="—" oninput="updateItem(${item.id},'price',this.value)" /></td>
+      <td class="num ${cls(m)}">${pr !== null ? pr.toLocaleString()+'円' : '—'}</td>
+      <td class="num">
+        <div class="margin-bar-wrap" style="justify-content:flex-end;">
+          <div class="margin-bar-bg"><div class="margin-bar-fill ${barCls(m)}" style="width:${barW}%"></div></div>
+          <span class="margin-val ${cls(m)}">${m !== null ? m.toFixed(1)+'%' : '—'}</span>
+        </div>
+      </td>
+      <td>${badge(m)}</td>
+      <td><button class="del-btn" onclick="deleteItem(${item.id})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function render() {
+  renderSummary();
+  renderTable();
+}
+
+function updateItem(id, field, value) {
+  const item = items.find(x => x.id === id);
+  if (item) { item[field] = value; render(); }
+}
+
+function addItem() {
+  items.push({ id: nextId++, name: '新規薬剤・製品', cat: filterCat === 'すべて' ? '外用' : filterCat, cost: '', price: '', suzuken:'', ksk:'', alfresa:'' });
+  render();
+  // focus last name input
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('.name-input');
+    if (inputs.length) inputs[inputs.length-1].focus();
+  }, 50);
+}
+
+function deleteItem(id) {
+  if (items.length <= 1) return;
+  items = items.filter(x => x.id !== id);
+  render();
+}
+
+// Filter tabs
+document.getElementById('filterTabs').addEventListener('click', e => {
+  if (!e.target.dataset.cat) return;
+  filterCat = e.target.dataset.cat;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === filterCat));
+  render();
+});
+
+// Sort
+document.getElementById('sortSelect').addEventListener('change', e => {
+  sortKey = e.target.value;
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
